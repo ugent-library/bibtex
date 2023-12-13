@@ -11,8 +11,9 @@ import (
 
 var (
 	reStripComment = regexp.MustCompile(`^%.*$`)
-	// reName         = regexp.MustCompile(`[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`)
-	reAtName = regexp.MustCompile(`@([a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+)`)
+	namePattern    = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
+	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
+	reKey          = regexp.MustCompile(`s*\{\s*(` + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
 )
 
 type Parser struct {
@@ -49,8 +50,7 @@ func (p *Parser) Next() (*Entry, error) {
 			// include more info (see perl)
 			return nil, errors.New("type not found")
 		}
-
-		e.Type = strings.ToUpper(eStr[m[0]+1 : m[1]])
+		e.Type = strings.ToUpper(eStr[m[2]:m[3]])
 
 		// read rest of entry (matches braces)
 		startPos := m[0] - 1
@@ -58,7 +58,6 @@ func (p *Parser) Next() (*Entry, error) {
 		braceLevel := strings.Count(eStr, "{") - strings.Count(eStr, "}")
 
 		for braceLevel != 0 {
-			// pos := m[1]
 			if !scanner.Scan() {
 				break
 			}
@@ -75,6 +74,19 @@ func (p *Parser) Next() (*Entry, error) {
 		// raw bibtex
 		e.Raw = strings.TrimSpace(eStr[startPos:])
 
+		// TOOD handle STRING, COMMENT, PREAMBLE
+
+		// advance
+		eStr = eStr[m[1]:]
+		m = reKey.FindStringSubmatchIndex(eStr)
+		if m == nil {
+			// include more info (see perl)
+			// TODO slurp close bracket
+			return nil, errors.New("malformed entry")
+		}
+
+		e.Key = eStr[m[2]:m[3]]
+
 		return e, nil
 	}
 	if err := scanner.Err(); err != nil {
@@ -85,9 +97,10 @@ func (p *Parser) Next() (*Entry, error) {
 }
 
 type Entry struct {
-	Type string
 	Pre  string
 	Raw  string
+	Type string
+	Key  string
 }
 
 func main() {
