@@ -100,7 +100,7 @@ func (p *Parser) Next() (*Entry, error) {
 		// advance
 		eStr = eStr[m[1]:]
 		for m = reField.FindStringSubmatchIndex(eStr); m != nil; m = reField.FindStringSubmatchIndex(eStr) {
-			field := Field{Name: eStr[m[2]:m[3]]}
+			field := Field{Name: strings.ToLower(eStr[m[2]:m[3]])}
 			// advance
 			eStr = eStr[m[1]:]
 			newEStr, val, err := p.parseString(eStr)
@@ -199,19 +199,6 @@ func (p *Parser) extractBracketedValue(eStr string) (string, string) {
 	return eStr, val
 }
 
-type Entry struct {
-	Pre    string
-	Raw    string
-	Type   string
-	Key    string
-	Fields []Field
-}
-
-type Field struct {
-	Name  string
-	Value string
-}
-
 func main() {
 	bib := `
 	PREAMBLE
@@ -253,6 +240,8 @@ func main() {
 		if e == nil {
 			break
 		}
-		log.Printf("%+v", e.Fields)
+		log.Printf("type: %s", e.Type)
+		log.Printf("key: %s", e.Key)
+		log.Printf("fields: %+v", e.Fields)
 	}
 }
