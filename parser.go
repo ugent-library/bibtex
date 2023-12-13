@@ -14,6 +14,14 @@ var (
 	namePattern    = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
 	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
 	reKey          = regexp.MustCompile(`s*\{\s*(` + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
+	reField        = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
+	reDigits       = regexp.MustCompile(`^\d+`)
+	reName         = regexp.MustCompile(`^` + namePattern)
+	reQuotedString = regexp.MustCompile(`^"(([^"\\]*(\\.)*[^\\"]*)*)"`)
+	reConcatString = regexp.MustCompile(`^\s*#\s*`)
+	reWhitespace   = regexp.MustCompile(`^\s*`)
+	reEscape       = regexp.MustCompile(`^\\.`)
+	reStringVal    = regexp.MustCompile(`^[^\\\{\}]+`) // TODO better name
 )
 
 type Parser struct {
@@ -87,6 +95,25 @@ func (p *Parser) Next() (*Entry, error) {
 
 		e.Key = eStr[m[2]:m[3]]
 
+		// advance
+		eStr = eStr[m[1]:]
+		for m = reField.FindStringSubmatchIndex(eStr); m != nil; m = reField.FindStringSubmatchIndex(eStr) {
+			field := Field{Name: eStr[m[2]:m[3]]}
+			// advance
+			eStr = eStr[m[1]:]
+			newEStr, val, err := p.parseString(eStr)
+			if err != nil {
+				return nil, err
+			}
+			eStr = newEStr
+			field.Value = val
+			e.Fields = append(e.Fields, field)
+			// skip past next comma
+			if idx := strings.Index(eStr, ","); idx > -1 {
+				eStr = eStr[idx+1:]
+			}
+		}
+
 		return e, nil
 	}
 	if err := scanner.Err(); err != nil {
@@ -96,11 +123,92 @@ func (p *Parser) Next() (*Entry, error) {
 	return nil, nil
 }
 
+func (p *Parser) parseString(eStr string) (string, string, error) {
+	str := ""
+
+	for {
+		if m := reDigits.FindStringIndex(eStr); m != nil {
+			log.Print("EXTRACT DIGITS")
+			str += eStr[m[0]:m[1]]
+			eStr = eStr[m[1]:]
+		} else if m := reName.FindStringIndex(eStr); m != nil {
+			log.Print("EXTRACT NAME")
+			// TODO look up string in strings map
+			str += eStr[m[0]:m[1]]
+			eStr = eStr[m[1]:]
+		} else if m := reQuotedString.FindStringSubmatchIndex(eStr); m != nil {
+			log.Print("EXTRACT QUOTED")
+			str += eStr[m[2]:m[3]]
+			eStr = eStr[m[1]:]
+		} else {
+			log.Print("EXTRACT BRACKETED")
+			newEStr, val := p.extractBracketedValue(eStr)
+			// TODO remove brackets
+			str += val
+			eStr = newEStr
+		}
+
+		if m := reConcatString.FindStringIndex(eStr); m != nil {
+			eStr = eStr[m[1]:]
+			continue
+		}
+		break
+	}
+
+	// TODO replace newlines? see perl
+
+	return eStr, str, nil
+}
+
+func (p *Parser) extractBracketedValue(eStr string) (string, string) {
+	val := ""
+
+	// skip whitespace
+	if m := reWhitespace.FindStringIndex(eStr); m != nil {
+		eStr = eStr[m[1]:]
+	}
+
+	var depth int
+	for {
+		if m := reEscape.FindStringIndex(eStr); m != nil {
+			val += eStr[m[0]:m[1]]
+			eStr = eStr[m[1]:]
+			continue
+		} else if strings.HasPrefix(eStr, "{") {
+			val += "{"
+			eStr = eStr[1:]
+			depth++
+			continue
+		} else if strings.HasPrefix(eStr, "}") {
+			val += "}"
+			eStr = eStr[1:]
+			depth--
+			if depth > 0 {
+				continue
+			}
+			break
+		} else if m := reStringVal.FindStringIndex(eStr); m != nil {
+			val += eStr[m[0]:m[1]]
+			eStr = eStr[m[1]:]
+			continue
+		}
+		break
+	}
+
+	return eStr, val
+}
+
 type Entry struct {
-	Pre  string
-	Raw  string
-	Type string
-	Key  string
+	Pre    string
+	Raw    string
+	Type   string
+	Key    string
+	Fields []Field
+}
+
+type Field struct {
+	Name  string
+	Value string
 }
 
 func main() {
@@ -144,6 +252,6 @@ func main() {
 		if e == nil {
 			break
 		}
-		log.Printf("%+v", e)
+		log.Printf("%+v", e.Fields)
 	}
 }
