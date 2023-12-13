@@ -10,18 +10,20 @@ import (
 )
 
 var (
-	reStripComment = regexp.MustCompile(`^%.*$`)
-	namePattern    = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
-	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
-	reKey          = regexp.MustCompile(`s*\{\s*(` + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
-	reField        = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
-	reDigits       = regexp.MustCompile(`^\d+`)
-	reName         = regexp.MustCompile(`^` + namePattern)
-	reQuotedString = regexp.MustCompile(`^"(([^"\\]*(\\.)*[^\\"]*)*)"`)
-	reConcatString = regexp.MustCompile(`^\s*#\s*`)
-	reWhitespace   = regexp.MustCompile(`^\s*`)
-	reEscape       = regexp.MustCompile(`^\\.`)
-	reStringVal    = regexp.MustCompile(`^[^\\\{\}]+`) // TODO better name
+	reStripComment  = regexp.MustCompile(`^%.*$`)
+	namePattern     = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
+	reAtName        = regexp.MustCompile(`@(` + namePattern + `)`)
+	reKey           = regexp.MustCompile(`s*\{\s*(` + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
+	reField         = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
+	reDigits        = regexp.MustCompile(`^\d+`)
+	reName          = regexp.MustCompile(`^` + namePattern)
+	reQuotedString  = regexp.MustCompile(`^"(([^"\\]*(\\.)*[^\\"]*)*)"`)
+	reConcatString  = regexp.MustCompile(`^\s*#\s*`)
+	reWhitespace    = regexp.MustCompile(`^\s*`)
+	reEscape        = regexp.MustCompile(`^\\.`)
+	reStringVal     = regexp.MustCompile(`^[^\\\{\}]+`) // TODO better name
+	reLeftBrackets  = regexp.MustCompile(`^\{+`)
+	reRightBrackets = regexp.MustCompile(`\}+$`)
 )
 
 type Parser struct {
@@ -128,20 +130,16 @@ func (p *Parser) parseString(eStr string) (string, string, error) {
 
 	for {
 		if m := reDigits.FindStringIndex(eStr); m != nil {
-			log.Print("EXTRACT DIGITS")
 			str += eStr[m[0]:m[1]]
 			eStr = eStr[m[1]:]
 		} else if m := reName.FindStringIndex(eStr); m != nil {
-			log.Print("EXTRACT NAME")
 			// TODO look up string in strings map
 			str += eStr[m[0]:m[1]]
 			eStr = eStr[m[1]:]
 		} else if m := reQuotedString.FindStringSubmatchIndex(eStr); m != nil {
-			log.Print("EXTRACT QUOTED")
 			str += eStr[m[2]:m[3]]
 			eStr = eStr[m[1]:]
 		} else {
-			log.Print("EXTRACT BRACKETED")
 			newEStr, val := p.extractBracketedValue(eStr)
 			// TODO remove brackets
 			str += val
@@ -194,6 +192,9 @@ func (p *Parser) extractBracketedValue(eStr string) (string, string) {
 		}
 		break
 	}
+
+	val = reLeftBrackets.ReplaceAllString(val, "")
+	val = reRightBrackets.ReplaceAllString(val, "")
 
 	return eStr, val
 }
