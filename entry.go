@@ -11,7 +11,6 @@ var reSplitAuthorEditor = regexp.MustCompile(`(?i)\s+and\s+`)
 var reAuthorEditor = regexp.MustCompile(`(?i)(.*?)(\{|\s+and\s+)`)
 
 type Entry struct {
-	Pre    string
 	Raw    string
 	Type   string
 	Key    string

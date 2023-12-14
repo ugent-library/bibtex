@@ -81,15 +81,10 @@ func (p *Parser) Next() (*Entry, error) {
 
 		eStr = buf.String()
 
-		// add pre to entry
-		// TODO ignore pre?
-		e.Pre = strings.TrimSpace(eStr[:startPos])
-
 		// raw bibtex
 		e.Raw = strings.TrimSpace(eStr[startPos:])
 
-		// advance
-		eStr = eStr[m[1]:]
+		eStr = eStr[m[1]:] // advance
 
 		// handle STRING
 		if e.Type == "STRING" {
@@ -99,8 +94,7 @@ func (p *Parser) Next() (*Entry, error) {
 			}
 			key := eStr[m[2]:m[3]]
 
-			// advance
-			eStr = eStr[m[1]:]
+			eStr = eStr[m[1]:] // advance
 			_, val, err := p.parseString(eStr)
 			if err != nil {
 				return nil, err
@@ -111,10 +105,8 @@ func (p *Parser) Next() (*Entry, error) {
 			return p.Next()
 		}
 
-		// handle COMMENT and PREAMBLE, only add raw
-		// TODO just skip?
 		if e.Type == "COMMENT" || e.Type == "PREAMBLE" {
-			return e, nil
+			return p.Next()
 		}
 
 		// handle normal entry

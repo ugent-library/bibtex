@@ -82,15 +82,11 @@ EXPORT DATE: 07 September 2023
 		}
 		log.Print("-----------")
 		log.Printf("type: %s", e.Type)
-		if e.Type == "COMMENT" || e.Type == "PREAMBLE" {
-			log.Printf("raw: %s", e.Raw)
-		} else {
-			log.Printf("key: %s", e.Key)
-			for _, f := range e.Fields {
-				log.Printf("field %s: %s", f.Name, f.DecodeValue())
-			}
-			log.Printf("author: %s", strings.Join(e.Author(), ";"))
-			log.Printf("editor: %s", strings.Join(e.Editor(), ";"))
+		log.Printf("key: %s", e.Key)
+		for _, f := range e.Fields {
+			log.Printf("field %s: %s", f.Name, f.DecodeValue())
 		}
+		log.Printf("author: %s", strings.Join(e.Author(), ";"))
+		log.Printf("editor: %s", strings.Join(e.Editor(), ";"))
 	}
 }
