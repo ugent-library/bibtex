@@ -25,7 +25,8 @@ func main() {
 		year         = {{2023}},
 	  }
 
-	@string{eng="English"}
+	  @string{ptr="English"}
+	  @string{eng=ptr}
 
 	@book{01HAKX6YXA1C4ZNYK54G1HMXEF,
 	abstract     = {{The so-called \textyen{}Mamluk\textdollar sultans \downarrow\ who ruled Egypt and Syria between the late thirteenth and early sixteenth centuries AD have often been portrayed as lacking in legitimacy due to their background as slave soldiers. Sultanic biographies written by chancery officials in the early period of the sultanate have been read as part of an effort of these sultans to legitimise their position on the throne. This book reconsiders the main corpus of six such biographies written by the historians Ibn ʿAbd al-Ẓāhir (d. 1293) and his nephew Shāfiʿ ibn ʿAlī (d. 1330) and argues that these were in fact far more complex texts. An understanding of their discourses of legitimisation needs to be embedded within a broader understanding of the multi-directional discourses operating across the texts. The study proposes to interpret these texts as "spectacles", in which authors emplotted the reign of a sultan in thoroughly literary and rhetorical fashion, making especially extensive use of textual forms prevalent in the chancery. In doing so the authors reimagined the format of the biography as a performative vehicle for displaying their literary credentials and helping them negotiate positions in the chancery and the wider courtly orbit.}},
@@ -86,7 +87,7 @@ EXPORT DATE: 07 September 2023
 		for _, f := range e.Fields {
 			log.Printf("field %s: %s", f.Name, f.DecodeValue())
 		}
-		log.Printf("author: %s", strings.Join(e.Author(), ";"))
-		log.Printf("editor: %s", strings.Join(e.Editor(), ";"))
+		log.Printf("author: %s", strings.Join(e.DecodeAuthors(), ";"))
+		log.Printf("editor: %s", strings.Join(e.DecodeEditors(), ";"))
 	}
 }

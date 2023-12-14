@@ -17,7 +17,7 @@ type Entry struct {
 	Fields []Field
 }
 
-func (e *Entry) Author() []string {
+func (e *Entry) Authors() []string {
 	for _, f := range e.Fields {
 		if f.Name == "author" {
 			return splitAuthorEditor(f.Value)
@@ -26,10 +26,31 @@ func (e *Entry) Author() []string {
 	return nil
 }
 
-func (e *Entry) Editor() []string {
+func (e *Entry) DecodeAuthors() []string {
+	return e.decodeAuthorsEditors("author")
+}
+
+func (e *Entry) Editors() []string {
 	for _, f := range e.Fields {
 		if f.Name == "editor" {
 			return splitAuthorEditor(f.Value)
+		}
+	}
+	return nil
+}
+
+func (e *Entry) DecodeEditors() []string {
+	return e.decodeAuthorsEditors("editor")
+}
+
+func (e *Entry) decodeAuthorsEditors(fieldName string) []string {
+	for _, f := range e.Fields {
+		if f.Name == fieldName {
+			names := splitAuthorEditor(f.Value)
+			for i, name := range names {
+				names[i] = latex.Decode(name)
+			}
+			return names
 		}
 	}
 	return nil

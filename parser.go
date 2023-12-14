@@ -1,5 +1,8 @@
 package bibtex
 
+// Some useful links
+// format description: https://maverick.inria.fr/~Xavier.Decoret/resources/xdkbibtex/bibtex_summary.html
+
 import (
 	"bufio"
 	"errors"
@@ -11,7 +14,7 @@ import (
 var (
 	reStripComment = regexp.MustCompile(`^%.*$`)
 	namePattern    = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
-	inKeyPattern   = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\' ]+` // allow spaces in identifiers (scopus)
+	inKeyPattern   = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\' ]+` // we allow spaces in identifiers (scopus)
 	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
 	// TODO match this more efficiently
 	reKey           = regexp.MustCompile(`s*\{\s*(` + namePattern + inKeyPattern + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
@@ -86,11 +89,16 @@ func (p *Parser) Next() (*Entry, error) {
 
 		eStr = eStr[m[1]:] // advance
 
-		// handle STRING
+		// skip @comment and @preamble
+		if e.Type == "COMMENT" || e.Type == "PREAMBLE" {
+			return p.Next()
+		}
+
+		// handle @string
 		if e.Type == "STRING" {
 			m = reStringName.FindStringSubmatchIndex(eStr)
 			if m == nil {
-				return nil, errors.New("malformed string") // include more info
+				return nil, errors.New("malformed string") // TODO include more info
 			}
 			key := eStr[m[2]:m[3]]
 
@@ -105,10 +113,6 @@ func (p *Parser) Next() (*Entry, error) {
 			return p.Next()
 		}
 
-		if e.Type == "COMMENT" || e.Type == "PREAMBLE" {
-			return p.Next()
-		}
-
 		// handle normal entry
 		m = reKey.FindStringSubmatchIndex(eStr)
 		if m == nil {
@@ -119,12 +123,10 @@ func (p *Parser) Next() (*Entry, error) {
 
 		e.Key = eStr[m[2]:m[3]]
 
-		// advance
-		eStr = eStr[m[1]:]
+		eStr = eStr[m[1]:] // advance
 		for m = reFieldName.FindStringSubmatchIndex(eStr); m != nil; m = reFieldName.FindStringSubmatchIndex(eStr) {
 			field := Field{Name: strings.ToLower(eStr[m[2]:m[3]])}
-			// advance
-			eStr = eStr[m[1]:]
+			eStr = eStr[m[1]:] // advance
 			newEStr, val, err := p.parseString(eStr)
 			if err != nil {
 				return nil, err
@@ -191,16 +193,16 @@ func (p *Parser) extractBracketedValue(eStr string) (string, string) {
 	for {
 		if m := reEscape.FindStringIndex(eStr); m != nil {
 			val += eStr[m[0]:m[1]]
-			eStr = eStr[m[1]:]
+			eStr = eStr[m[1]:] // advance
 			continue
 		} else if strings.HasPrefix(eStr, "{") {
 			val += "{"
-			eStr = eStr[1:]
+			eStr = eStr[1:] // advance
 			depth++
 			continue
 		} else if strings.HasPrefix(eStr, "}") {
 			val += "}"
-			eStr = eStr[1:]
+			eStr = eStr[1:] // advance
 			depth--
 			if depth > 0 {
 				continue
@@ -208,12 +210,13 @@ func (p *Parser) extractBracketedValue(eStr string) (string, string) {
 			break
 		} else if m := reStringValue.FindStringIndex(eStr); m != nil {
 			val += eStr[m[0]:m[1]]
-			eStr = eStr[m[1]:]
+			eStr = eStr[m[1]:] // advance
 			continue
 		}
 		break
 	}
 
+	// remove brackets
 	val = reLeftBrackets.ReplaceAllString(val, "")
 	val = reRightBrackets.ReplaceAllString(val, "")
 
