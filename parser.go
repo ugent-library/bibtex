@@ -9,10 +9,12 @@ import (
 )
 
 var (
-	reStripComment  = regexp.MustCompile(`^%.*$`)
-	namePattern     = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
-	reAtName        = regexp.MustCompile(`@(` + namePattern + `)`)
-	reKey           = regexp.MustCompile(`s*\{\s*(` + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
+	reStripComment = regexp.MustCompile(`^%.*$`)
+	namePattern    = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
+	inKeyPattern   = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\' ]+` // allow spaces in identifiers (scopus)
+	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
+	// TODO match this more efficiently
+	reKey           = regexp.MustCompile(`s*\{\s*(` + namePattern + inKeyPattern + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
 	reField         = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
 	reDigits        = regexp.MustCompile(`^\d+`)
 	reName          = regexp.MustCompile(`^` + namePattern)

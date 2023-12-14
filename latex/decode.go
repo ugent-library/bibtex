@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-// var reNormalizeMacro1 = regexp.MustCompile(`(\\[a-zA-Z]+)\\(\s+)`) // \foo\ bar -> \foo{} bar
-// var reNormalizeMacro2 = regexp.MustCompile(`([^{]\\\w)([;,.:%])`)  //} Aaaa\o, -> Aaaa\o{},
+var reNormalizeMacro1 = regexp.MustCompile(`(\\[a-zA-Z]+)\\(\s+)`) // \foo\ bar -> \foo{} bar
+var reNormalizeMacro2 = regexp.MustCompile(`([^{]\\\w)([;,.:%])`)  //} Aaaa\o, -> Aaaa\o{},
 var remacros *regexp.Regexp
 
 func init() {
@@ -14,14 +14,14 @@ func init() {
 	for k := range macros {
 		macroNames = append(macroNames, k)
 	}
-	// remacros = regexp.MustCompile(`\\(` + strings.Join(macroNames, "|") + `)(?:\{\}|\s+|\b)`)
-	remacros = regexp.MustCompile(`\\(` + strings.Join(macroNames, "|") + `)(?:\{\})?`)
+	remacros = regexp.MustCompile(`\\(` + strings.Join(macroNames, "|") + `)(?:\{\}|\s+|\b)`)
+	// remacros = regexp.MustCompile(`\\(` + strings.Join(macroNames, "|") + `)(?:\{\})?`)
 }
 
 func Decode(str string) string {
-	// str = reNormalizeMacro1.ReplaceAllString(str, "$1{}$2")
+	str = reNormalizeMacro1.ReplaceAllString(str, "$1{}$2")
 	// log.Printf("str: %s", str)
-	// str = reNormalizeMacro2.ReplaceAllString(str, "$1{}$2")
+	str = reNormalizeMacro2.ReplaceAllString(str, "$1{}$2")
 	// log.Printf("str: %s", str)
 
 	// TODO this doesn't always work?
