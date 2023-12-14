@@ -55,7 +55,6 @@ func (p *Parser) Next() (*Entry, error) {
 		eStr := buf.String()
 
 		// get type
-		// TODO do we need the match across multiple lines flag like im perl? -> (?s)
 		m := reAtName.FindStringSubmatchIndex(eStr)
 		if m == nil {
 			// include more info (see perl)
@@ -80,15 +79,22 @@ func (p *Parser) Next() (*Entry, error) {
 		eStr = buf.String()
 
 		// add pre to entry
+		// TODO ignore pre?
 		e.Pre = strings.TrimSpace(eStr[:startPos])
 
 		// raw bibtex
 		e.Raw = strings.TrimSpace(eStr[startPos:])
 
-		// TOOD handle STRING, COMMENT, PREAMBLE
-
 		// advance
 		eStr = eStr[m[1]:]
+
+		// TOOD handle STRING
+
+		// only add raw COMMENT and PREAMBLE
+		if e.Type == "COMMENT" || e.Type == "PREAMBLE" {
+			return e, nil
+		}
+
 		m = reKey.FindStringSubmatchIndex(eStr)
 		if m == nil {
 			// include more info (see perl)

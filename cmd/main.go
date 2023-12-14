@@ -39,6 +39,10 @@ func main() {
 	year         = {{2023}},
 	}
 
+	@comment{
+		bla bla bla
+	}
+
 	Scopus
 EXPORT DATE: 07 September 2023
 @article{  Van       Haute  [2]    ,
@@ -76,11 +80,15 @@ EXPORT DATE: 07 September 2023
 		}
 		log.Print("-----------")
 		log.Printf("type: %s", e.Type)
-		log.Printf("key: %s", e.Key)
-		for _, f := range e.Fields {
-			log.Printf("field %s: %s", f.Name, f.DecodeValue())
+		if e.Type == "COMMENT" || e.Type == "PREAMBLE" {
+			log.Printf("raw: %s", e.Raw)
+		} else {
+			log.Printf("key: %s", e.Key)
+			for _, f := range e.Fields {
+				log.Printf("field %s: %s", f.Name, f.DecodeValue())
+			}
+			log.Printf("author: %s", strings.Join(e.Author(), ";"))
+			log.Printf("editor: %s", strings.Join(e.Editor(), ";"))
 		}
-		log.Printf("author: %s", strings.Join(e.Author(), ";"))
-		log.Printf("editor: %s", strings.Join(e.Editor(), ";"))
 	}
 }
