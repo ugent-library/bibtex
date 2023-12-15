@@ -1,4 +1,6 @@
-# bibtex
+[![Go Reference](https://pkg.go.dev/badge/github.com/ugent-library/bibtex.svg)](https://pkg.go.dev/github.com/ugent-library/bibtex)
+
+# ugent-library/bibtex
 
 Robust Golang BibTeX parser
 
