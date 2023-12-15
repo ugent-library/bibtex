@@ -19,7 +19,7 @@ var (
 	namePattern    = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
 	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
 	// TODO match this more efficiently
-	reKey             = regexp.MustCompile(`^s*\{\s*([^\s,]+[^,]*?)\s*,[\s\n]*|\s+\r?\s*`)
+	reKey             = regexp.MustCompile(`^s*\{\s*([^\s,]+[^,]*?)\s*,[\s\n]*`) // TODO too liberal now
 	reFieldName       = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
 	reDigits          = regexp.MustCompile(`^\d+`)
 	reName            = regexp.MustCompile(`^` + namePattern)
@@ -123,7 +123,7 @@ func (p *Parser) Next() (*Entry, error) {
 
 		// handle normal entry
 		m = reKey.FindStringSubmatchIndex(eStr)
-		if len(m) == 0 {
+		if m == nil {
 			// include more info (see perl)
 			// TODO slurp close bracket
 			return nil, errors.New("malformed entry")
