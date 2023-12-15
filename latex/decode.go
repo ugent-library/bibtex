@@ -32,6 +32,16 @@ func Decode(str string) string {
 	return str
 }
 
+// var accents = {
+//     chr(0x60) => "\x{300}", #`
+//     chr(0x27) => "\x{301}", #'
+//     chr(0x5e) => "\x{302}", #^
+//     chr(0x7e) => "\x{303}", #~
+//     chr(0x3d) => "\x{304}", #=
+//     chr(0x2e) => "\x{307}", #.
+//     chr(0x22) => "\x{308}", #"
+// );
+
 var macros = map[string]string{
 	"AA":          "\u00C5",
 	"aa":          "\u00E5",

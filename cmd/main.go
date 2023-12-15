@@ -50,7 +50,7 @@ func main() {
 EXPORT DATE: 07 September 2023
 @article{  Van       Haute  [2]    ,
 	title        = {Author Correction: Prediction of essential oil content in spearmint (Mentha spicata) via near-infrared hyperspectral imaging and chemometrics (Scientific Reports, (2023), 13, 1, (4261), 10.1038/s41598-023-31517-8)},
-	author       = {Van Haute, Sam and Nikkhah, Amin and Malavi, Derick and Kiani, Sajad},
+	author       = {Van Haute, Sam and Nikkhah, Amin and M{\"{a}}lavi, Derick and Kiani, Sajad},
 	year         = 2023,
 	journal      = {Scientific Reports},
 	publisher    = {Nature Research},
@@ -85,9 +85,9 @@ EXPORT DATE: 07 September 2023
 		log.Printf("type: %s", e.Type)
 		log.Printf("key: %s", e.Key)
 		for _, f := range e.Fields {
-			log.Printf("field %s: %s", f.Name, f.DecodeValue())
+			log.Printf("field %s: %s", f.Name, f.Value)
 		}
-		log.Printf("author: %s", strings.Join(e.DecodeAuthors(), ";"))
-		log.Printf("editor: %s", strings.Join(e.DecodeEditors(), ";"))
+		log.Printf("author: %s", strings.Join(e.Authors, ";"))
+		log.Printf("editor: %s", strings.Join(e.Editors, ";"))
 	}
 }

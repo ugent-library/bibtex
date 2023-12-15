@@ -1,7 +1,8 @@
 package bibtex
 
-// Some useful links
-// format description: https://maverick.inria.fr/~Xavier.Decoret/resources/xdkbibtex/bibtex_summary.html
+// Parser based on https://metacpan.org/release/BORISV/BibTeX-Parser-1.04
+// Some useful links:
+// format description https://maverick.inria.fr/~Xavier.Decoret/resources/xdkbibtex/bibtex_summary.html
 
 import (
 	"bufio"
@@ -9,6 +10,8 @@ import (
 	"io"
 	"regexp"
 	"strings"
+
+	"github.com/ugent-library/bibtex/latex"
 )
 
 var (
@@ -17,18 +20,20 @@ var (
 	inKeyPattern   = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\' ]+` // we allow spaces in identifiers (scopus)
 	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
 	// TODO match this more efficiently
-	reKey           = regexp.MustCompile(`s*\{\s*(` + namePattern + inKeyPattern + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
-	reFieldName     = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
-	reDigits        = regexp.MustCompile(`^\d+`)
-	reName          = regexp.MustCompile(`^` + namePattern)
-	reStringName    = regexp.MustCompile(`\{\s*(` + namePattern + `)\s*=\s*`)
-	reQuotedString  = regexp.MustCompile(`^"(([^"\\]*(\\.)*[^\\"]*)*)"`)
-	reConcatString  = regexp.MustCompile(`^\s*#\s*`)
-	reWhitespace    = regexp.MustCompile(`^\s*`)
-	reEscape        = regexp.MustCompile(`^\\.`)
-	reStringValue   = regexp.MustCompile(`^[^\\\{\}]+`)
-	reLeftBrackets  = regexp.MustCompile(`^\{+`)
-	reRightBrackets = regexp.MustCompile(`\}+$`)
+	reKey             = regexp.MustCompile(`s*\{\s*(` + namePattern + inKeyPattern + namePattern + `)\s*,[\s\n]*|\s+\r?\s*`)
+	reFieldName       = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
+	reDigits          = regexp.MustCompile(`^\d+`)
+	reName            = regexp.MustCompile(`^` + namePattern)
+	reStringName      = regexp.MustCompile(`\{\s*(` + namePattern + `)\s*=\s*`)
+	reQuotedString    = regexp.MustCompile(`^"(([^"\\]*(\\.)*[^\\"]*)*)"`)
+	reConcatString    = regexp.MustCompile(`^\s*#\s*`)
+	reWhitespace      = regexp.MustCompile(`^\s*`)
+	reEscape          = regexp.MustCompile(`^\\.`)
+	reStringValue     = regexp.MustCompile(`^[^\\\{\}]+`)
+	reLeftBrackets    = regexp.MustCompile(`^\{+`)
+	reRightBrackets   = regexp.MustCompile(`\}+$`)
+	reAuthorEditorSep = regexp.MustCompile(`(?i)\s+and\s+`)
+	reAuthorEditor    = regexp.MustCompile(`(?i)(.*?)(\{|\s+and\s+)`)
 )
 
 type Parser struct {
@@ -132,8 +137,24 @@ func (p *Parser) Next() (*Entry, error) {
 				return nil, err
 			}
 			eStr = newEStr
-			field.Value = val
+			field.RawValue = val
+			field.Value = latex.Decode(val)
 			e.Fields = append(e.Fields, field)
+
+			if field.Name == "author" {
+				e.RawAuthors = splitAuthorEditor(val)
+				e.Authors = make([]string, len(e.RawAuthors))
+				for i, name := range e.RawAuthors {
+					e.Authors[i] = latex.Decode(name)
+				}
+			} else if field.Name == "editor" {
+				e.RawEditors = splitAuthorEditor(val)
+				e.Editors = make([]string, len(e.RawEditors))
+				for i, name := range e.RawEditors {
+					e.Editors[i] = latex.Decode(name)
+				}
+			}
+
 			// skip past next comma
 			if idx := strings.Index(eStr, ","); idx > -1 {
 				eStr = eStr[idx+1:]
@@ -221,4 +242,56 @@ func (p *Parser) extractBracketedValue(eStr string) (string, string) {
 	val = reRightBrackets.ReplaceAllString(val, "")
 
 	return eStr, val
+}
+
+func splitAuthorEditor(str string) []string {
+	str = strings.TrimSpace(str)
+
+	var tokens []string
+
+	buf := ""
+	for str != "" {
+		m := reAuthorEditor.FindStringSubmatchIndex(str)
+
+		if m == nil {
+			buf += str
+			break
+		}
+
+		firstMatch := str[m[2]:m[3]]
+		secondMatch := str[m[4]:m[5]]
+		str = str[m[1]:] // advance
+
+		if reAuthorEditorSep.MatchString(secondMatch) {
+			buf += firstMatch
+			tokens = append(tokens, buf)
+			buf = ""
+		} else if strings.Contains(secondMatch, "{") {
+			buf += firstMatch
+			buf += "{"
+			numBraces := 1
+			for numBraces != 0 && str != "" {
+				sym := str[0:1] // peek
+				buf += sym
+				if sym == "{" {
+					numBraces++
+				} else if sym == "}" {
+					numBraces--
+				}
+				str = str[1:] // advance
+			}
+			// return nil when braces are unbalanced
+			if numBraces != 0 {
+				return nil
+			}
+		} else {
+			buf += firstMatch
+		}
+	}
+
+	if buf != "" {
+		tokens = append(tokens, buf)
+	}
+
+	return tokens
 }
