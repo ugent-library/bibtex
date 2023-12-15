@@ -6,7 +6,7 @@ package bibtex
 
 import (
 	"bufio"
-	"errors"
+	"fmt"
 	"io"
 	"regexp"
 	"strings"
@@ -36,8 +36,10 @@ var (
 )
 
 type Parser struct {
-	scanner *bufio.Scanner
-	strings map[string]string
+	scanner        *bufio.Scanner
+	entryStartLine int
+	line           int
+	strings        map[string]string
 }
 
 func NewParser(r io.Reader) *Parser {
@@ -53,12 +55,15 @@ func (p *Parser) Next() (*Entry, error) {
 
 	for scanner.Scan() {
 		line := reStripComment.ReplaceAllString(scanner.Text(), "")
+		p.line++
 		if line != "" {
 			buf.WriteString(line + "\n")
 		}
 		if !strings.Contains(line, "@") {
 			continue
 		}
+
+		p.entryStartLine = p.line
 
 		e := &Entry{}
 
@@ -67,8 +72,7 @@ func (p *Parser) Next() (*Entry, error) {
 		// get type
 		m := reAtName.FindStringSubmatchIndex(eStr)
 		if m == nil {
-			// include more info (see perl)
-			return nil, errors.New("type not found")
+			return nil, fmt.Errorf("bibtex: type not found at in entry at line %d", p.entryStartLine)
 		}
 		e.Type = strings.ToLower(eStr[m[2]:m[3]])
 
@@ -86,6 +90,7 @@ func (p *Parser) Next() (*Entry, error) {
 				break
 			}
 			line := scanner.Text()
+			p.line++
 			braceLevel = braceLevel + strings.Count(line, "{") - strings.Count(line, "}")
 			buf.WriteString(line + "\n")
 		}
@@ -106,7 +111,7 @@ func (p *Parser) Next() (*Entry, error) {
 		if e.Type == "string" {
 			m = reStringName.FindStringSubmatchIndex(eStr)
 			if m == nil {
-				return nil, errors.New("malformed string") // TODO include more info
+				return nil, fmt.Errorf("bibtex: malformed string at line %d", p.entryStartLine)
 			}
 			key := eStr[m[2]:m[3]]
 
@@ -124,9 +129,7 @@ func (p *Parser) Next() (*Entry, error) {
 		// handle normal entry
 		m = reKey.FindStringSubmatchIndex(eStr)
 		if m == nil {
-			// include more info (see perl)
-			// TODO slurp close bracket
-			return nil, errors.New("malformed entry")
+			return nil, fmt.Errorf("bibtex: malformed entry at line %d", p.entryStartLine)
 		}
 
 		e.Key = eStr[m[2]:m[3]]
