@@ -4,11 +4,11 @@ type Entry struct {
 	Raw        string   `json:"-"`
 	Type       string   `json:"type"`
 	Key        string   `json:"key"`
-	Fields     []Field  `json:"fields"`
+	Fields     []Field  `json:"fields,omitempty"`
 	RawAuthors []string `json:"-"`
-	Authors    []string `json:"authors"`
+	Authors    []string `json:"authors,omitempty"`
 	RawEditors []string `json:"-"`
-	Editors    []string `json:"editors"`
+	Editors    []string `json:"editors,omitempty"`
 }
 
 type Field struct {
