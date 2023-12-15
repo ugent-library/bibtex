@@ -15,10 +15,9 @@ import (
 )
 
 var (
-	reStripComment = regexp.MustCompile(`^%.*$`)
-	namePattern    = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
-	reAtName       = regexp.MustCompile(`@(` + namePattern + `)`)
-	// TODO match this more efficiently
+	reStripComment    = regexp.MustCompile(`^%.*$`)
+	namePattern       = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
+	reAtName          = regexp.MustCompile(`@(` + namePattern + `)`)
 	reKey             = regexp.MustCompile(`^s*\{\s*([^\s,]+[^,]*?)\s*,[\s\n]*`) // TODO too liberal now
 	reFieldName       = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
 	reDigits          = regexp.MustCompile(`^\d+`)
@@ -202,8 +201,6 @@ func (p *Parser) parseString(eStr string) (string, string, error) {
 		}
 		break
 	}
-
-	// TODO replace newlines? see perl
 
 	return eStr, buf.String(), nil
 }
