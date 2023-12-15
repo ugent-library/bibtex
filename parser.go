@@ -75,6 +75,10 @@ func (p *Parser) Next() (*Entry, error) {
 
 		// read rest of entry (matches braces)
 		startPos := m[0] - 1
+		// TODO why?
+		if startPos < 0 {
+			startPos = 0
+		}
 		// count braces
 		braceLevel := strings.Count(eStr, "{") - strings.Count(eStr, "}")
 
