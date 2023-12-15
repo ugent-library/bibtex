@@ -1,5 +1,8 @@
 package latex
 
+// Based on https://metacpan.org/release/FIRMICUS/LaTeX-Decode-0.05
+// See also https://metacpan.org/release/BORISV/LaTeX-ToUnicode-0.54
+
 import (
 	"regexp"
 	"sort"
@@ -49,6 +52,7 @@ func init() {
 	reMacros = regexp.MustCompile(`\\(` + strings.Join(macroNames, "|") + `)(?:\{\}|\s+|\b)`)
 }
 
+// TODO superscript, dings, negations
 func Decode(str string) string {
 	str = reNormalize1.ReplaceAllString(str, "$1{}$2")
 	str = reNormalize2.ReplaceAllString(str, "$1{}$2")
