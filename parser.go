@@ -71,7 +71,7 @@ func (p *Parser) Next() (*Entry, error) {
 			// include more info (see perl)
 			return nil, errors.New("type not found")
 		}
-		e.Type = strings.ToUpper(eStr[m[2]:m[3]])
+		e.Type = strings.ToLower(eStr[m[2]:m[3]])
 
 		// read rest of entry (matches braces)
 		startPos := m[0] - 1
@@ -99,12 +99,12 @@ func (p *Parser) Next() (*Entry, error) {
 		eStr = eStr[m[1]:] // advance
 
 		// skip @comment and @preamble
-		if e.Type == "COMMENT" || e.Type == "PREAMBLE" {
+		if e.Type == "comment" || e.Type == "preamble" {
 			return p.Next()
 		}
 
 		// handle @string
-		if e.Type == "STRING" {
+		if e.Type == "string" {
 			m = reStringName.FindStringSubmatchIndex(eStr)
 			if m == nil {
 				return nil, errors.New("malformed string") // TODO include more info
