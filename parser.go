@@ -50,7 +50,7 @@ func NewParser(r io.Reader) *Parser {
 
 func (p *Parser) Next() (*Entry, error) {
 	scanner := p.scanner
-	buf := strings.Builder{}
+	buf := &strings.Builder{}
 
 	for scanner.Scan() {
 		line := reStripComment.ReplaceAllString(scanner.Text(), "")
@@ -171,22 +171,22 @@ func (p *Parser) Next() (*Entry, error) {
 }
 
 func (p *Parser) parseString(eStr string) (string, string, error) {
-	str := ""
+	buf := &strings.Builder{}
 
 	for {
 		if m := reDigits.FindStringIndex(eStr); m != nil {
-			str += eStr[m[0]:m[1]]
+			buf.WriteString(eStr[m[0]:m[1]])
 			eStr = eStr[m[1]:] //advance
 		} else if m := reName.FindStringIndex(eStr); m != nil {
 			key := eStr[m[0]:m[1]]
-			str += p.strings[key]
+			buf.WriteString(p.strings[key])
 			eStr = eStr[m[1]:] // advance
 		} else if m := reQuotedString.FindStringSubmatchIndex(eStr); m != nil {
-			str += eStr[m[2]:m[3]]
+			buf.WriteString(eStr[m[2]:m[3]])
 			eStr = eStr[m[1]:] //advance
 		} else {
 			newEStr, val := p.extractBracketedValue(eStr)
-			str += val
+			buf.WriteString(val)
 			eStr = newEStr
 		}
 
@@ -199,7 +199,7 @@ func (p *Parser) parseString(eStr string) (string, string, error) {
 
 	// TODO replace newlines? see perl
 
-	return eStr, str, nil
+	return eStr, buf.String(), nil
 }
 
 func (p *Parser) extractBracketedValue(eStr string) (string, string) {
