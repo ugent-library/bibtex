@@ -1,5 +1,7 @@
 package bibtex
 
+// TODO method to split author names
+
 type Entry struct {
 	Raw        string   `json:"-"`
 	Type       string   `json:"type"`
