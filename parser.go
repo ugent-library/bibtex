@@ -19,7 +19,7 @@ var (
 	namePattern       = `[a-zA-Z0-9\!\$\&\*\+\-\.\/\:\;\<\>\?\[\]\^\_\` + "`" + `\|\']+`
 	reAtName          = regexp.MustCompile(`@(` + namePattern + `)`)
 	reKey             = regexp.MustCompile(`^s*\{\s*([^\s,]+[^,]*?)\s*,[\s\n]*`) // TODO too liberal now
-	reFieldName       = regexp.MustCompile(`[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
+	reFieldName       = regexp.MustCompile(`^[\s\n]*(` + namePattern + `)[\s\n]*=[\s\n]*`)
 	reDigits          = regexp.MustCompile(`^\d+`)
 	reName            = regexp.MustCompile(`^` + namePattern)
 	reStringName      = regexp.MustCompile(`\{\s*(` + namePattern + `)\s*=\s*`)
@@ -39,6 +39,7 @@ type Parser struct {
 	entryStartLine int
 	line           int
 	strings        map[string]string
+	rest           string
 }
 
 func NewParser(r io.Reader) *Parser {
@@ -52,9 +53,18 @@ func (p *Parser) Next() (*Entry, error) {
 	scanner := p.scanner
 	buf := &strings.Builder{}
 
-	for scanner.Scan() {
-		line := reStripComment.ReplaceAllString(scanner.Text(), "")
-		p.line++
+	for {
+		var line string
+		if p.rest != "" {
+			line = p.rest
+			p.rest = ""
+		} else if !scanner.Scan() {
+			break
+		} else {
+			line = reStripComment.ReplaceAllString(scanner.Text(), "")
+			p.line++
+		}
+
 		if line != "" {
 			buf.WriteString(line + "\n")
 		}
@@ -164,6 +174,13 @@ func (p *Parser) Next() (*Entry, error) {
 			if idx := strings.Index(eStr, ","); idx > -1 {
 				eStr = eStr[idx+1:]
 			}
+		}
+
+		// handle malformed input without newlines between entries
+		if reStringName.MatchString(eStr) {
+			p.rest = eStr
+		} else {
+			p.rest = ""
 		}
 
 		return e, nil
