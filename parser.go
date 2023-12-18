@@ -86,6 +86,8 @@ func (p *Parser) Next() (*Entry, error) {
 		e.Type = strings.ToLower(eStr[m[2]:m[3]])
 
 		// read rest of entry (matches braces)
+		// TODO with malformed input without newlines between entries this reads the whole file
+		// in memory (but parses correctly)
 		startPos := m[0] - 1
 		// TODO why?
 		if startPos < 0 {
@@ -177,7 +179,7 @@ func (p *Parser) Next() (*Entry, error) {
 		}
 
 		// handle malformed input without newlines between entries
-		if reStringName.MatchString(eStr) {
+		if strings.Contains(eStr, "@") {
 			p.rest = eStr
 		} else {
 			p.rest = ""
