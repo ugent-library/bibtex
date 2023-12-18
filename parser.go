@@ -7,7 +7,6 @@ package bibtex
 import (
 	"bufio"
 	"io"
-	"log"
 	"regexp"
 	"strings"
 	"unicode"
@@ -47,6 +46,7 @@ func NewParser(r io.Reader) *Parser {
 	}
 }
 
+// TODO strip comments (lines starting with %) (although not in the examples)
 func (p *Parser) Next() (*Entry, error) {
 	buf := &strings.Builder{}
 
@@ -86,8 +86,6 @@ func (p *Parser) Next() (*Entry, error) {
 	entry := &Entry{
 		Raw: buf.String(),
 	}
-
-	log.Printf("ENTRY: %+v\n----", entry)
 
 	return entry, nil
 }
@@ -136,7 +134,6 @@ func (p *Parser) readUntil(buf *strings.Builder, char rune) error {
 	}
 }
 
-// TODO read rune by rune, not line by line
 // func (p *Parser) Next() (*Entry, error) {
 // 	scanner := p.scanner
 // 	buf := &strings.Builder{}
