@@ -42,6 +42,7 @@ type Parser struct {
 func NewParser(r io.Reader) *Parser {
 	return &Parser{
 		r:       bufio.NewReader(r),
+		line:    1,
 		strings: make(map[string]string),
 	}
 }
@@ -58,17 +59,17 @@ func (p *Parser) Next() (*Entry, error) {
 		return nil, err
 	}
 
-	if err := p.readWhitespace(buf); err != nil {
+	if err := p.writeWhitespace(buf); err != nil {
 		return nil, err
 	}
 
-	if err := p.readUntil(buf, '{'); err != nil {
+	if err := p.writeUntil(buf, '{'); err != nil {
 		return nil, err
 	}
 
 	braceLevel := 1
 	for braceLevel != 0 {
-		c, _, err := p.r.ReadRune()
+		c, err := p.readRune(buf)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +93,7 @@ func (p *Parser) Next() (*Entry, error) {
 
 func (p *Parser) skipUntil(buf *strings.Builder, char rune) error {
 	for {
-		c, _, err := p.r.ReadRune()
+		c, err := p.readRune(buf)
 		if err != nil {
 			return err
 		}
@@ -103,9 +104,9 @@ func (p *Parser) skipUntil(buf *strings.Builder, char rune) error {
 	}
 }
 
-func (p *Parser) readWhitespace(buf *strings.Builder) error {
+func (p *Parser) writeWhitespace(buf *strings.Builder) error {
 	for {
-		c, _, err := p.r.ReadRune()
+		c, err := p.readRune(buf)
 		if err != nil {
 			return err
 		}
@@ -119,9 +120,9 @@ func (p *Parser) readWhitespace(buf *strings.Builder) error {
 	}
 }
 
-func (p *Parser) readUntil(buf *strings.Builder, char rune) error {
+func (p *Parser) writeUntil(buf *strings.Builder, char rune) error {
 	for {
-		c, _, err := p.r.ReadRune()
+		c, err := p.readRune(buf)
 		if err != nil {
 			return err
 		}
@@ -132,6 +133,20 @@ func (p *Parser) readUntil(buf *strings.Builder, char rune) error {
 			return nil
 		}
 	}
+}
+
+func (p *Parser) readRune(buf *strings.Builder) (rune, error) {
+	c, _, err := p.r.ReadRune()
+	if err != nil {
+		return 0, err
+	}
+	if c == '\n' || c == '\r' { // TODO handle other line endings
+		p.line++
+		p.col = 0
+		// TODO strip comments (lines beginning with %)
+	}
+	p.col++
+	return c, nil
 }
 
 // func (p *Parser) Next() (*Entry, error) {
