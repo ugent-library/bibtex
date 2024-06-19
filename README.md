@@ -2,7 +2,7 @@
 
 # ugent-library/bibtex
 
-Robust Golang BibTeX parser
+Robust (as in forgiving) Golang BibTeX parser
 
 ## Examples
 
