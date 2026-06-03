@@ -31,12 +31,18 @@ var (
 	reAuthorEditor    = regexp.MustCompile(`(?i)(.*?)(\{|\s+and\s+)`)
 )
 
+// Parser reads BibTeX entries from an input stream one at a time via Next. It
+// records @string macro definitions as it encounters them so that later entries
+// can resolve references to them, and so is stateful — a Parser is not safe for
+// concurrent use.
 type Parser struct {
 	r       *bufio.Reader
 	line    int
 	strings map[string]string
 }
 
+// NewParser returns a Parser that reads BibTeX from r. Call Next repeatedly to
+// pull entries until it returns (nil, nil) at end of input.
 func NewParser(r io.Reader) *Parser {
 	return &Parser{
 		r:       bufio.NewReader(r),
@@ -90,9 +96,10 @@ func (p *Parser) Next() (*Entry, error) {
 			if err != nil {
 				return nil, err
 			}
-			if c == '{' {
+			switch c {
+			case '{':
 				braceLevel++
-			} else if c == '}' {
+			case '}':
 				braceLevel--
 			}
 			if _, err := buf.WriteRune(c); err != nil {
@@ -353,9 +360,10 @@ func splitAuthorEditor(str string) []string {
 			for numBraces != 0 && str != "" {
 				sym := str[0:1] // peek
 				buf += sym
-				if sym == "{" {
+				switch sym {
+				case "{":
 					numBraces++
-				} else if sym == "}" {
+				case "}":
 					numBraces--
 				}
 				str = str[1:] // advance

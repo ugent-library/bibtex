@@ -7,22 +7,31 @@ import (
 	"github.com/ugent-library/bibtex/latex"
 )
 
+// Entry is one parsed item from a BibTeX stream: a bibliographic entry such as
+// @article{...}, an @string macro definition, or an @comment/@preamble.
+//
+// Fields named "Raw…" hold values exactly as they appeared in the source; their
+// decoded counterparts (Authors, Editors and Field.Value) have LaTeX markup
+// such as accents resolved to Unicode. Author and editor lists are split into
+// individual names but left whole — use SplitName to break one into its
+// First/von/Last/Jr parts.
 type Entry struct {
-	Raw        string   `json:"-"`
-	Type       string   `json:"type"`
-	Key        string   `json:"key"`
-	Line       int      `json:"line,omitempty"` // source line where the entry starts
-	Fields     []Field  `json:"fields,omitempty"`
-	RawAuthors []string `json:"-"`
-	Authors    []string `json:"authors,omitempty"`
-	RawEditors []string `json:"-"`
-	Editors    []string `json:"editors,omitempty"`
+	Raw        string   `json:"-"`                 // entry's source text, trimmed
+	Type       string   `json:"type"`              // lowercased type, e.g. "article"
+	Key        string   `json:"key"`               // citation key, "" if absent or malformed
+	Line       int      `json:"line,omitempty"`    // 1-based source line where the entry starts
+	Fields     []Field  `json:"fields,omitempty"`  // fields in source order
+	RawAuthors []string `json:"-"`                 // author names in source form
+	Authors    []string `json:"authors,omitempty"` // author names, LaTeX-decoded
+	RawEditors []string `json:"-"`                 // editor names in source form
+	Editors    []string `json:"editors,omitempty"` // editor names, LaTeX-decoded
 }
 
+// Field is a single name = value pair within an entry.
 type Field struct {
-	Name     string `json:"name"`
-	RawValue string `json:"-"`
-	Value    string `json:"value"`
+	Name     string `json:"name"`  // lowercased field name, e.g. "title"
+	RawValue string `json:"-"`     // value with @string macros resolved and outer delimiters stripped
+	Value    string `json:"value"` // RawValue with LaTeX markup decoded to Unicode
 }
 
 // Name holds the components of a single author or editor name following the
