@@ -49,7 +49,7 @@ func TestWeird(t *testing.T) {
 			Fields: []Field{
 				{Name: "title", RawValue: "{Plurale tantum}", Value: "{Plurale tantum}"},
 				{Name: "editor", RawValue: "{Acme Corporation}", Value: "{Acme Corporation}"},
-				{Name: "pages", RawValue: "{10--20}", Value: "{10--20}"},
+				{Name: "pages", RawValue: "{10--20}", Value: "{10–20}"},
 				{Name: "year", RawValue: "", Value: ""},
 			},
 			RawEditors: []string{"{Acme Corporation}"},

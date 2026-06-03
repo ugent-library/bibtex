@@ -32,6 +32,10 @@ func TestDecode(t *testing.T) {
 		{"cedilla inside a word", `Cura\c{c}ao`, "Curaçao"},
 		{"accent on a capital", `\'Angel`, "Ángel"},
 		{"protective braces around a word are kept", `{IBM} Research`, "{IBM} Research"},
+		{"en dash in a page range", `168--198`, "168–198"},
+		{"em dash", `foo---bar`, "foo—bar"},
+		{"single hyphen untouched", `well-known`, "well-known"},
+		{"em then hyphen for four", `a----b`, "a—-b"},
 	}
 
 	for _, tt := range tests {

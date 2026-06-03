@@ -1,7 +1,23 @@
-package latex
-
+// Package latex converts the subset of LaTeX markup that appears in BibTeX
+// field values into Unicode: accents (\'e -> é), diacritics (\v{S} -> Š),
+// named macros and symbols (\alpha -> α, \textendash -> –), and the --/---
+// ligatures (en/em dashes). Unrecognised macros are passed through unchanged.
+//
+// It is intentionally scoped to bibliographic input and is not a general LaTeX
+// renderer. It does NOT handle:
+//
+//   - math mode: $...$ and \(...\) are left verbatim, including super- and
+//     subscripts such as $^{13}$C or $T_c$;
+//   - \textsuperscript and \textsubscript;
+//   - \ding{} dingbats and other symbol or decorative fonts;
+//   - \not-composed negations (\not\equiv); only precomposed forms present in
+//     the macro table (e.g. \neq -> ≠) are converted;
+//   - context awareness: the --/--- ligatures are applied everywhere, so "--"
+//     inside a url or doi field is also turned into a dash.
+//
 // Based on https://metacpan.org/release/FIRMICUS/LaTeX-Decode-0.05
 // See also https://metacpan.org/release/BORISV/LaTeX-ToUnicode-0.54
+package latex
 
 import (
 	"regexp"
@@ -18,6 +34,8 @@ var (
 	reAccents1             = regexp.MustCompile(`\\(` + accentsPattern + `)\{(\p{L}\p{M}*)\}`)
 	reAccents2             = regexp.MustCompile(`\\(` + accentsPattern + `)(\p{L}\p{M}*)`)
 	reBracedAccentedLetter = regexp.MustCompile(`{(\PM\pM+)}`)
+	reEmDash               = regexp.MustCompile(`---`) // em dash; matched before en dash
+	reEnDash               = regexp.MustCompile(`--`)
 
 	// need init
 	diacPattern string
@@ -84,6 +102,11 @@ func Decode(str string) string {
 	// remove {} around letter+combining mark(s)
 	// the perl version skips this by default, because it destroys constructions like \foo{\`e}
 	str = reBracedAccentedLetter.ReplaceAllString(str, "$1")
+
+	// --/--- ligatures -> en/em dashes (e.g. page ranges "168--198"). Em first
+	// so "---" is not consumed as "--" + "-".
+	str = reEmDash.ReplaceAllString(str, "—")
+	str = reEnDash.ReplaceAllString(str, "–")
 
 	return str
 }
