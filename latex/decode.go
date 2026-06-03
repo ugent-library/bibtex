@@ -26,7 +26,6 @@ var (
 	reDiac2     *regexp.Regexp
 )
 
-// TODO use code generation
 func init() {
 	// diacritics
 	diacNames := make([]string, 0, len(diacritics))
@@ -52,17 +51,10 @@ func init() {
 	reMacros = regexp.MustCompile(`\\(` + strings.Join(macroNames, "|") + `)(?:\{\}|\s+|\b)`)
 }
 
-// TODO superscript, dings, negations
 func Decode(str string) string {
 	str = reNormalize1.ReplaceAllString(str, "$1{}$2")
 	str = reNormalize2.ReplaceAllString(str, "$1{}$2")
 	str = reNormalize3.ReplaceAllString(str, "$1{i}")
-	// TODO do we need this?
-	//remove {} around macros that print one character
-	// by default we skip that, as it would break constructions like \foo{\i}
-	// if ($strip_outer_braces) {
-	//     $text =~ s/ \{\\($WORDMAC_RE)\} / $WORDMAC{$1} /gxe;
-	// }
 
 	str = reMacros.ReplaceAllStringFunc(str, func(macro string) string {
 		m := reMacros.FindStringSubmatch(macro)
